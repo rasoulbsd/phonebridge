@@ -1,0 +1,36 @@
+from phonebridge.domain.addresses import conversation_key, normalize_address
+from phonebridge.domain.models import (
+    ConnectionState,
+    Contact,
+    Conversation,
+    ConversationEvent,
+    Direction,
+    Message,
+    MessageEvent,
+    MessageStatus,
+    NewMessage,
+    NotificationMode,
+    PhoneStatus,
+    SearchHit,
+    StatusEvent,
+    UiEvent,
+)
+
+__all__ = [
+    "ConnectionState",
+    "Contact",
+    "Conversation",
+    "ConversationEvent",
+    "Direction",
+    "Message",
+    "MessageEvent",
+    "MessageStatus",
+    "NewMessage",
+    "NotificationMode",
+    "PhoneStatus",
+    "SearchHit",
+    "StatusEvent",
+    "UiEvent",
+    "conversation_key",
+    "normalize_address",
+]

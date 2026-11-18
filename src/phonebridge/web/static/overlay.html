@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FaceTime</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/overlay.css">
+  <script type="module" src="/static/overlay.js"></script>
+</head>
+<body class="overlay">
+  <main class="ov-card" aria-live="polite">
+    <div class="ov-info pywebview-drag-region">
+      <span class="ov-avatar" id="ov-avatar" aria-hidden="true"></span>
+      <div class="ov-text">
+        <p class="ov-name" id="ov-name">FaceTime</p>
+        <p class="ov-status" id="ov-status"></p>
+      </div>
+    </div>
+    <div class="ov-actions">
+      <button type="button" class="call-btn decline" id="ov-decline" aria-label="Decline" title="Decline" hidden>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.6 3.5h2.6l1.5 4-2 1.3a10.5 10.5 0 0 0 6.5 6.5l1.3-2 4 1.5v2.6a1.6 1.6 0 0 1-1.7 1.6A15.5 15.5 0 0 1 5 5.2a1.6 1.6 0 0 1 1.6-1.7z"/></svg>
+      </button>
+      <button type="button" class="call-btn answer" id="ov-answer" aria-label="Answer" title="Answer" hidden>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 14 17H4a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 4 7z"/><path d="M15.5 10.5l5-3v9l-5-3"/></svg>
+      </button>
+    </div>
+  </main>
+</body>
+</html>

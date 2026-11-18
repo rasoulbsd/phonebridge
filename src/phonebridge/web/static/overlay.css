@@ -1,0 +1,64 @@
+/* Floating call window (desktop app only): a small dark card that stays above other windows. */
+
+body.overlay {
+  background: #1c1c1e;
+  color: #fff;
+  user-select: none;
+}
+
+.ov-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 0 14px;
+  box-sizing: border-box;
+}
+
+.ov-info {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  height: 100%;
+  cursor: grab;
+}
+
+.ov-avatar .avatar {
+  width: 46px;
+  height: 46px;
+  font-size: 16px;
+}
+
+.ov-text {
+  min-width: 0;
+}
+
+.ov-name,
+.ov-status {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ov-name {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.ov-status {
+  color: rgb(255 255 255 / 0.68);
+  font-size: 12.5px;
+}
+
+.ov-actions {
+  display: flex;
+  flex: none;
+  gap: 10px;
+}
+
+.ov-actions .call-btn[hidden] {
+  display: none;
+}

@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.env
+*.db
+*.log
+build/
+dist/
+
+# Personal branding for one PC: never committed, pushed or released.
+src/phonebridge/branding_local.py
+src/phonebridge/assets/*-local.*
+# Build output of packaging/mac/facetime-helper/build.sh; attached to releases instead.
+packaging/mac/facetime-helper/*.dylib
+scripts/__pycache__/
