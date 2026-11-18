@@ -38,6 +38,13 @@ _REACTION_VERBS = {
     ReactionType.QUESTION: "Questioned",
 }
 _SERVICES: dict[str, Literal["iMessage", "SMS", "RCS"]] = {"iMessage": "iMessage", "SMS": "SMS", "RCS": "RCS"}
+_RELAYED_SERVICES = frozenset({"SMS", "RCS"})
+# Messages' error for a recipient that isn't registered with iMessage.
+_NOT_ON_IMESSAGE = 22
+_TEXT_NOT_RELAYED = (
+    "Not sent as a text message. Texts go through your iPhone: check it's on and has "
+    "Text Message Forwarding turned on for this Mac (Settings > Apps > Messages)."
+)
 
 
 def from_ms(value: int | None) -> datetime | None:
@@ -205,6 +212,19 @@ def delivery_of(message: BBMessage) -> Delivery:
     return Delivery.SENT
 
 
+def send_error(message: BBMessage, chat_id: str) -> str | None:
+    """Why a message from this Mac wasn't delivered, in words the sender can act on."""
+    if not message.is_from_me or not message.error:
+        return None
+    service = (message.handle.service if message.handle else None) or service_of(chat_id)
+    if service in _RELAYED_SERVICES:
+        # A Mac has no phone line: texts only leave through an iPhone that relays them.
+        return _TEXT_NOT_RELAYED
+    if message.error == _NOT_ON_IMESSAGE:
+        return "Not delivered: they don't use iMessage."
+    return f"Not delivered (error {message.error})"
+
+
 def attachment_url(guid: str) -> str:
     return f"/api/attachments/{quote(guid, safe='')}"
 
@@ -278,7 +298,7 @@ def message_from_bb(
         status=delivery_of(message),
         delivered_at=from_ms(message.date_delivered),
         read_at=from_ms(message.date_read),
-        error=f"Not delivered (error {message.error})" if message.is_from_me and message.error else None,
+        error=send_error(message, chat_id),
         attachments=[] if unsent else attachments_of(message),
         reactions=reactions,
         reply_to=reply_to,

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7
+
+- A message that fails to send now says why in plain words: the person doesn't use iMessage, or a
+  text message couldn't go out because the iPhone isn't relaying texts for the Mac (Text Message
+  Forwarding).
+
 ## 0.2.6
 
 First public release.

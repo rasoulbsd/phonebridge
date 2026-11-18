@@ -30,7 +30,7 @@ from phonebridge.mac.call_helper import CallPhase
 from phonebridge.mac.client import BlueBubblesClient
 from phonebridge.mac.models import BBContact, BBMessage, BBServerInfo
 from phonebridge.mac.photos import thumbnail
-from phonebridge.mac.translate import Names, reaction_of, target_guid
+from phonebridge.mac.translate import Names, reaction_of, send_error, target_guid
 from phonebridge.runtime import quiet_http_logs
 from phonebridge.services.mac_service import MacService, features_for
 from phonebridge.services.manager import ServiceManager, normalize_mac_url
@@ -102,6 +102,29 @@ def test_reaction_of(kind: str, expected: tuple[ReactionType, bool] | None) -> N
 @pytest.mark.parametrize(("raw", "guid"), [("p:0/ABC", "ABC"), ("bp:ABC", "ABC"), ("ABC", "ABC")])
 def test_target_guid(raw: str, guid: str) -> None:
     assert target_guid(raw) == guid
+
+
+_TEXT_NOT_RELAYED = (
+    "Not sent as a text message. Texts go through your iPhone: check it's on and has "
+    "Text Message Forwarding turned on for this Mac (Settings > Apps > Messages)."
+)
+
+
+@pytest.mark.parametrize(
+    ("fields", "chat_id", "expected"),
+    [
+        ({"isFromMe": False, "error": 22}, DM, None),
+        ({"isFromMe": True}, DM, None),
+        ({"isFromMe": True, "error": 22, "handle": MAYA}, DM, "Not delivered: they don't use iMessage."),
+        ({"isFromMe": True, "error": 4, "handle": {**MAYA, "service": "SMS"}}, DM, _TEXT_NOT_RELAYED),
+        ({"isFromMe": True, "error": 4}, "SMS;-;+15550142", _TEXT_NOT_RELAYED),
+        ({"isFromMe": True, "error": 39}, GROUP, "Not delivered (error 39)"),
+    ],
+)
+def test_send_error_says_why_in_plain_words(
+    fields: dict[str, object], chat_id: str, expected: str | None
+) -> None:
+    assert send_error(bb("m", **fields), chat_id) == expected
 
 
 @pytest.mark.parametrize(
