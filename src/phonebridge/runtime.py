@@ -24,8 +24,11 @@ from phonebridge.mac.client import BlueBubblesClient
 from phonebridge.mac.events import SocketIoEvents
 from phonebridge.services.mac_service import MacService
 from phonebridge.services.manager import ServiceManager
+from phonebridge.services.offline import OfflineMacService
 from phonebridge.services.phone_service import PhoneService
+from phonebridge.settings import default_data_dir
 from phonebridge.storage import SqliteRepository
+from phonebridge.storage.mac_cache import MacCache
 from phonebridge.web import WebSocketHub, create_app
 
 if TYPE_CHECKING:
@@ -106,18 +109,23 @@ class Runtime:
         self._server: _Server | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._repo: SqliteRepository | None = None
+        self._mac_cache: MacCache | None = None
 
     def _build_service(self, config: UserConfig) -> MessagingService:
-        settings, repo = self.settings, self._repo
-        if repo is None:
-            raise RuntimeError("repository not open")
+        settings, repo, cache = self.settings, self._repo, self._mac_cache
+        if repo is None or cache is None:
+            raise RuntimeError("storage not open")
         if config.mac is not None:
             url, password = config.mac.url, config.mac.password.get_secret_value()
-            return MacService(
-                BlueBubblesClient(url, password),
-                lambda: SocketIoEvents(url, password),
+            return OfflineMacService(
+                lambda sink: MacService(
+                    BlueBubblesClient(url, password),
+                    lambda: SocketIoEvents(url, password),
+                    sink,
+                    calls=CallHelperClient(helper_url(url), password),
+                ),
+                cache,
                 self._sink,
-                calls=CallHelperClient(helper_url(url), password),
             )
         # Demo and WinRT adapters load only when used: WinRT exists only on Windows.
         if settings.demo:
@@ -144,8 +152,19 @@ class Runtime:
             from phonebridge.demo import seed_demo_history
 
             await seed_demo_history(self._repo)
+        self._mac_cache = await MacCache.open(
+            settings.data_dir / "mac-cache.db", settings.data_dir / "attachments"
+        )
+        # The registry copy restores the Mac connection if the data folder is lost. Only the
+        # real data folder uses it, so demos and test copies never pick up the real Mac.
+        # (Imported here like the other Windows-only adapters: winreg exists only on Windows.)
+        backup = None
+        if not settings.demo and settings.data_dir == default_data_dir():
+            from phonebridge.shell.registry import RegistryConfigBackup
+
+            backup = RegistryConfigBackup()
         manager = ServiceManager(
-            ConfigStore(settings.data_dir / "config.json"), self._build_service, self._sink
+            ConfigStore(settings.data_dir / "config.json", backup), self._build_service, self._sink
         )
         await manager.start()
         token = settings.token.get_secret_value() if settings.token else None
@@ -178,6 +197,7 @@ class Runtime:
                 backend.cancel()
         finally:
             await manager.current.close()
+            await self._mac_cache.close()
             await self._repo.close()
 
     def request_stop(self) -> None:

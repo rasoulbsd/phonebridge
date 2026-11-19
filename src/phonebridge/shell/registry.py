@@ -20,6 +20,8 @@ PUBLISHER = "Phonebridge"
 _RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 _UNINSTALL_KEY = rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{APP_NAME}"
 _AUMID_KEY = rf"Software\Classes\AppUserModelId\{APP_ID}"
+_SETTINGS_KEY = rf"Software\{APP_NAME}"
+_SETTINGS_VALUE = "Settings"
 
 
 def launch_command(*args: str) -> str:
@@ -80,6 +82,27 @@ def remove_all() -> None:
     for path in (_UNINSTALL_KEY, _AUMID_KEY):
         with contextlib.suppress(FileNotFoundError):
             winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path)
+
+
+class RegistryConfigBackup:
+    """Copy of the settings file (Mac password still DPAPI-encrypted) in the user's registry."""
+
+    def read(self) -> str | None:
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _SETTINGS_KEY) as key:
+                value, _ = winreg.QueryValueEx(key, _SETTINGS_VALUE)
+        except FileNotFoundError:
+            return None
+        return value if isinstance(value, str) else None
+
+    def write(self, text: str) -> None:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _SETTINGS_KEY) as key:
+            winreg.SetValueEx(key, _SETTINGS_VALUE, 0, winreg.REG_SZ, text)
+
+
+def remove_settings_backup() -> None:
+    with contextlib.suppress(FileNotFoundError):
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, _SETTINGS_KEY)
 
 
 def prefers_dark_theme() -> bool:

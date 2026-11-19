@@ -194,6 +194,7 @@ def uninstall(data_dir: Path, *, port: int = DEFAULT_PORT) -> None:
     registry.remove_all()
     if delete_history:
         shutil.rmtree(data_dir, ignore_errors=True)
+        registry.remove_settings_backup()
     target = install_dir()
     if target.exists():
         # This exe lives in the folder being deleted, so a detached shell removes it after we exit.

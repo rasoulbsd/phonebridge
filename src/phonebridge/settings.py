@@ -17,7 +17,7 @@ def _is_unspecified(host: str) -> bool:
         return False
 
 
-def _default_data_dir() -> Path:
+def default_data_dir() -> Path:
     base = os.environ.get("LOCALAPPDATA")
     return Path(base) / "Phonebridge" if base else Path.home() / ".phonebridge"
 
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     port: int = 8765
     # Required whenever host is not loopback (remote access).
     token: SecretStr | None = None
-    data_dir: Path = Field(default_factory=_default_data_dir)
+    data_dir: Path = Field(default_factory=default_data_dir)
     poll_seconds: float = 5.0
     push_poll_seconds: float = 30.0
     open_window: bool = True

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.8
+
+- Messages are kept on this PC: chats, conversations, contacts, contact photos and the photos and files you
+  open are saved as they arrive from the Mac, and each time the Mac connects the newest messages of every
+  chat are fetched. While the Mac is asleep, off or unreachable, everything stays readable and searchable
+  instead of disappearing.
+- The Mac connection survives losing the data folder: a DPAPI-encrypted copy of the settings is kept in the
+  user registry and restored automatically.
+
 ## 0.2.7
 
 - A message that fails to send now says why in plain words: the person doesn't use iMessage, or a

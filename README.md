@@ -88,13 +88,17 @@ Environment variables or a `.env` file next to `pyproject.toml`:
 | `PHONEBRIDGE_DATA_DIR` | `%LOCALAPPDATA%\Phonebridge` | History, settings and log |
 
 The Mac connection is set in the app and stored in `config.json` in the data folder, with the password
-encrypted by Windows (DPAPI) so only your Windows account can read it.
+encrypted by Windows (DPAPI) so only your Windows account can read it. A copy is kept in your user registry
+(`HKCU\Software\Phonebridge`), so the connection is restored automatically if the data folder is lost.
+Uninstalling with "delete history" removes both.
 
 ## Privacy
 
 Phonebridge only listens on `127.0.0.1` unless you change `PHONEBRIDGE_HOST` (then a token is required),
-and blocks requests from other websites. In Mac mode, messages stay on your Mac and are fetched on demand
-over your local network. In phone mode they're saved in `%LOCALAPPDATA%\Phonebridge\phonebridge.db`.
+and blocks requests from other websites. In Mac mode, a copy of your chats, messages, contacts and the
+photos and files you open is kept in `%LOCALAPPDATA%\Phonebridge` (`mac-cache.db` and `attachments\`), so
+conversations stay readable and searchable while the Mac is off or unreachable. In phone mode, texts are
+saved in `phonebridge.db` there. Uninstalling with "delete history" removes all of it.
 
 ## Development
 
