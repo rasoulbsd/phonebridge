@@ -72,6 +72,9 @@ class ConfigStore:
     def load(self) -> UserConfig:
         from_file = self._read_file()
         if from_file is not None and (config := self._parse(from_file, "settings file")) is not None:
+            # Keep the backup current, including for installs that predate it.
+            if self._backup is not None and config.mac is not None and self._backup.read() != from_file:
+                self._backup.write(from_file)
             return config
         from_backup = self._backup.read() if self._backup is not None else None
         if from_backup is not None and (config := self._parse(from_backup, "settings backup")) is not None:

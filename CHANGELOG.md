@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.9
+
+- The settings backup in the registry is also written when the app starts with a good settings file, so
+  installs from before 0.2.8 get one too.
+- `packaging/install-local.cmd` installs the newest personal build silently; open it from Explorer.
+
 ## 0.2.8
 
 - Messages are kept on this PC: chats, conversations, contacts, contact photos and the photos and files you

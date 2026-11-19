@@ -198,5 +198,13 @@ def test_settings_backup_restores_a_missing_or_damaged_file(tmp_path: Path) -> N
     assert again.mac.url == "http://mac:1234"
 
 
+def test_loading_a_good_file_refreshes_a_missing_backup(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    ConfigStore(path).save(UserConfig(mac=MacConnection(url="http://mac:1234", password=SecretStr("pw"))))
+    backup = MemoryBackup()
+    ConfigStore(path, backup).load()
+    assert backup.text == path.read_text(encoding="utf-8")
+
+
 def test_without_backup_a_missing_file_means_no_mac(tmp_path: Path) -> None:
     assert ConfigStore(tmp_path / "config.json").load() == UserConfig()

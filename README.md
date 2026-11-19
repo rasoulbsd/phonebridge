@@ -68,7 +68,8 @@ python -m phonebridge.shell --demo # fictional data, no phone or Mac needed
 Build the installer: `python packaging/build.py` (writes `dist/Phonebridge-Setup-<version>.exe`).
 
 Personal branding: a gitignored `src/phonebridge/branding_local.py` can set `DISPLAY_NAME`, `ICON_PNG` and
-`ICON_ICO` for your own copy; build it with `python packaging/build.py --personal`. Public builds and
+`ICON_ICO` for your own copy; build it with `python packaging/build.py --personal`. Install it with
+`packaging\install-local.cmd` (double-click it in Explorer). Public builds and
 releases never include it (the build checks).
 
 Release a version: bump `__version__` in `src/phonebridge/__init__.py`, add its section to
