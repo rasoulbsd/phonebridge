@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.10
+
+- Download works in the desktop app: it opens the Windows Save As dialog (in Downloads) for photos and
+  files, from the message menu, file chips and the photo viewer. Downloads were silently blocked before.
+- New **Copy image** / **Copy file** in the message menu and the photo viewer. Copied photos paste as a
+  picture into chats and documents and as a file into Explorer; other files paste into folders and emails.
+
 ## 0.2.9
 
 - The settings backup in the registry is also written when the app starts with a good settings file, so

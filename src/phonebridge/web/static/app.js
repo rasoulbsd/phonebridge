@@ -211,6 +211,7 @@ function cacheDom() {
     lbName: "lb-name",
     lbCount: "lb-count",
     lbDownload: "lb-download",
+    lbCopy: "lb-copy",
     lbStage: "lb-stage",
     lbImg: "lb-img",
     lbPrev: "lb-prev",
@@ -1360,6 +1361,13 @@ function onMessagesClick(event) {
     retryMessage(retry.dataset.retry);
     return;
   }
+  const chip = target.closest("a[data-download]");
+  const chipAttachment = chip && attachmentById(chip.dataset.download);
+  if (chipAttachment && desktopApi()) {
+    event.preventDefault();
+    downloadAttachment(chipAttachment);
+    return;
+  }
   const row = target.closest("li.msg[data-id]");
   const act = target.closest("[data-act]");
   if (act && row) {
@@ -1496,7 +1504,11 @@ function openMessageMenu(messageId, anchor, kind = "full", point = null) {
     if (caps.canEdit) add("Edit", "edit", () => startEdit(message));
     if (caps.canUnsend) add("Unsend", "unsend", () => unsendMessage(message), { danger: true });
     for (const attachment of caps.downloads) {
-      add(caps.downloads.length > 1 ? `Download ${truncate(attachment.name || "file", 28)}` : "Download", "download", () => downloadAttachment(attachment), { keepFocus: true });
+      const many = caps.downloads.length > 1;
+      const label = truncate(attachment.name || "file", 28);
+      const copyLabel = attachmentKind(attachment) === "image" ? "Copy image" : "Copy file";
+      add(many ? `${copyLabel}: ${label}` : copyLabel, "copy", () => copyAttachment(attachment), { keepFocus: true });
+      add(many ? `Download ${label}` : "Download", "download", () => downloadAttachment(attachment), { keepFocus: true });
     }
     if (list.childElementCount) menu.append(list);
   }
@@ -1630,13 +1642,79 @@ async function copyMessage(message) {
   toast((await copyText(message.text)) ? "Copied" : "Couldn't copy. Select the text instead.");
 }
 
-function downloadAttachment(attachment) {
+/** The desktop app's native bridge (Save As, file clipboard), or null in a browser. */
+function desktopApi() {
+  const api = window.pywebview?.api;
+  return api && typeof api.save_attachment === "function" ? api : null;
+}
+
+function attachmentFileName(attachment) {
+  return attachment.name || (attachmentKind(attachment) === "image" ? "Photo.jpg" : "Attachment");
+}
+
+async function downloadAttachment(attachment) {
   const href = mediaUrl(attachment.url);
   if (!href) return;
+  const native = desktopApi();
+  if (native) {
+    try {
+      const result = await native.save_attachment(href, attachmentFileName(attachment));
+      if (!result.ok) toast(`Couldn't save: ${result.error}`);
+      else if (result.path) toast(`Saved to ${result.path}`);
+    } catch (err) {
+      toast(`Couldn't save: ${err?.message || err}`);
+    }
+    return;
+  }
   const link = h("a", { href, download: attachment.name || "", hidden: true });
   document.body.append(link);
   link.click();
   link.remove();
+}
+
+async function copyAttachment(attachment) {
+  const href = mediaUrl(attachment.url);
+  if (!href) return;
+  const native = desktopApi();
+  if (native) {
+    try {
+      const result = await native.copy_attachment(href, attachmentFileName(attachment));
+      if (!result.ok) toast(`Couldn't copy: ${result.error}`);
+      else toast(result.kind === "image" ? "Image copied. Paste it into a chat, document or folder." : "File copied. Paste it into a folder, email or chat.");
+    } catch (err) {
+      toast(`Couldn't copy: ${err?.message || err}`);
+    }
+    return;
+  }
+  if (attachmentKind(attachment) !== "image" || !window.ClipboardItem) {
+    toast("Browsers can't copy files. Download it instead.");
+    return;
+  }
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": imageAsPng(href) })]);
+    toast("Image copied");
+  } catch {
+    toast("Couldn't copy the image. Download it instead.");
+  }
+}
+
+/** Browsers only accept PNG on the clipboard, so redraw the picture as one. */
+async function imageAsPng(href) {
+  const response = await fetch(href);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const bitmap = await createImageBitmap(await response.blob());
+  const canvas = h("canvas", { width: bitmap.width, height: bitmap.height });
+  canvas.getContext("2d").drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("no image"))), "image/png"));
+}
+
+function attachmentById(id) {
+  for (const message of state.thread?.messages ?? []) {
+    const found = (message.attachments ?? []).find((a) => a.id === id);
+    if (found) return found;
+  }
+  return null;
 }
 
 async function unsendMessage(message) {
@@ -3498,6 +3576,16 @@ function bindEvents() {
   });
   dom.confirmDialog.addEventListener("close", () => settleConfirm(false));
 
+  dom.lbDownload.addEventListener("click", (event) => {
+    const current = state.lightbox?.items[state.lightbox.index];
+    if (!current || !desktopApi()) return;
+    event.preventDefault();
+    downloadAttachment(current);
+  });
+  dom.lbCopy.addEventListener("click", () => {
+    const current = state.lightbox?.items[state.lightbox.index];
+    if (current) copyAttachment(current);
+  });
   dom.lbPrev.addEventListener("click", () => stepLightbox(-1));
   dom.lbNext.addEventListener("click", () => stepLightbox(1));
   dom.lbStage.addEventListener("click", (event) => {

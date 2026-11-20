@@ -19,6 +19,7 @@ from phonebridge.desktop import port_in_use
 from phonebridge.runtime import Runtime, configure_logging
 from phonebridge.settings import Settings
 from phonebridge.shell import install, registry
+from phonebridge.shell.files import AttachmentError, AttachmentFiles, LocalServerFetcher, WindowsClipboard
 from phonebridge.shell.overlay import CallOverlay
 from phonebridge.shell.toasts import ToastNotifier, WinRtToasts
 from phonebridge.shell.tray import Tray
@@ -81,6 +82,44 @@ def _keep_off_taskbar(window: webview.Window) -> None:
     user32.SetWindowLongW(hwnd, _GWL_EXSTYLE, (style | _WS_EX_TOOLWINDOW) & ~_WS_EX_APPWINDOW)
 
 
+class _WindowSaveDialog:
+    """Windows' own Save As dialog, owned by the main window."""
+
+    def __init__(self) -> None:
+        self.window: webview.Window | None = None
+
+    def ask(self, suggested_name: str, directory: Path) -> Path | None:
+        if self.window is None:
+            return None
+        chosen = self.window.create_file_dialog(
+            webview.FileDialog.SAVE, directory=str(directory), save_filename=suggested_name
+        )
+        if not chosen:
+            return None
+        return Path(chosen if isinstance(chosen, str) else chosen[0])
+
+
+class DesktopBridge:
+    """Methods the window calls as window.pywebview.api.*; results are plain dicts for JavaScript."""
+
+    def __init__(self, files: AttachmentFiles) -> None:
+        self._files = files
+
+    def save_attachment(self, url: str, name: str) -> dict[str, str | bool | None]:
+        try:
+            saved = self._files.save(url, name)
+        except AttachmentError as exc:
+            return {"ok": False, "error": str(exc)}
+        return {"ok": True, "path": saved}
+
+    def copy_attachment(self, url: str, name: str) -> dict[str, str | bool | None]:
+        try:
+            kind = self._files.copy(url, name)
+        except AttachmentError as exc:
+            return {"ok": False, "error": str(exc)}
+        return {"ok": True, "kind": kind}
+
+
 class DesktopApp:
     def __init__(self, settings: Settings, *, start_hidden: bool) -> None:
         self._settings = settings
@@ -91,6 +130,17 @@ class DesktopApp:
             WinRtToasts(registry.APP_ID, self.open_conversation), is_viewing=self._user_is_viewing
         )
         self._overlay = _OverlayHandle()
+        self._save_dialog = _WindowSaveDialog()
+        token = settings.token.get_secret_value() if settings.token else None
+        self._bridge = DesktopBridge(
+            AttachmentFiles(
+                LocalServerFetcher(settings.port, token),
+                WindowsClipboard(),
+                self._save_dialog,
+                clipboard_dir=settings.data_dir / "clipboard",
+                downloads_dir=Path.home() / "Downloads",
+            )
+        )
         self._runtime = Runtime(
             settings, extra_sinks=[self._toasts, CallOverlay(self._overlay)], desktop=self
         )
@@ -116,11 +166,15 @@ class DesktopApp:
             hidden=self._start_hidden,
             text_select=True,
             background_color="#111214" if registry.prefers_dark_theme() else "#ffffff",
+            js_api=self._bridge,
         )
         if self._window is None:
             return
+        self._save_dialog.window = self._window
         self._window.events.closing += self._on_closing
         self._create_overlay()
+        # Plain links with a download attribute (and anything not routed through the bridge) still work.
+        webview.settings["ALLOW_DOWNLOADS"] = True
         webview.start(
             gui="edgechromium", private_mode=False, storage_path=str(self._settings.data_dir / "webview")
         )
