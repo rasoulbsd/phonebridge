@@ -122,7 +122,7 @@ export function buildChatRow(chat, { selected, matcher, typing, lastSender, last
   if (unread) row.append(h("span", { class: "unread-dot", "aria-hidden": "true" }));
   row.append(chatAvatar(chat));
 
-  const name = h("span", { class: "conv-name" });
+  const name = h("span", { class: "conv-name", dir: "auto" });
   appendHighlighted(name, chatTitle(chat), matcher);
   const top = h("div", { class: "conv-top" }, name);
   if (isSmsLike(chat)) top.append(h("span", { class: "service-tag", title: `Sent as ${chat.service}` }, chat.service));
@@ -137,7 +137,7 @@ export function buildChatRow(chat, { selected, matcher, typing, lastSender, last
     else if (chat.last_from_me) preview.append("You: ");
     else if (chat.is_group && lastSender) preview.append(`${firstName(lastSender)}: `);
     const text = flatten(chat.last_text);
-    preview.append(text ? text : h("span", { class: "muted" }, "No messages"));
+    preview.append(text ? h("bdi", {}, text) : h("span", { class: "muted" }, "No messages"));
   }
 
   const bottom = h("div", { class: "conv-bottom" }, preview);
@@ -153,7 +153,7 @@ export function buildChatRow(chat, { selected, matcher, typing, lastSender, last
 
 export function buildHit(hit, chat, matcher, snippetText) {
   const { message } = hit;
-  const text = h("span", { class: "hit-snippet" });
+  const text = h("span", { class: "hit-snippet", dir: "auto" });
   if (message.from_me) text.append("You: ");
   else if (chat.is_group) text.append(`${firstName(resolvePerson(message.sender, chat))}: `);
   appendHighlighted(text, snippetText || messageSummary(message), matcher);
@@ -319,7 +319,7 @@ function buildReplyQuote(message, chat, source) {
     "button",
     { type: "button", class: "reply-quote", "data-jump": ref.id, title: "Show the original message" },
     h("span", { class: "rq-name" }, name),
-    h("span", { class: "rq-text" }, text),
+    h("span", { class: "rq-text", dir: "auto" }, text),
   );
 }
 

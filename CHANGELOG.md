@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.11
+
+- Right-to-left languages (Persian, Arabic, Hebrew): each line of a message, the message box and the
+  new-message box takes the direction of its first letter, so Persian reads and types right to left
+  while English stays left to right, even when both are mixed in one message. Search, group names,
+  chat previews and reply quotes follow too.
+
 ## 0.2.10
 
 - Download works in the desktop app: it opens the Windows Save As dialog (in Downloads) for photos and

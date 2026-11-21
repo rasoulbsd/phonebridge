@@ -226,6 +226,8 @@ input,
 textarea {
   font: inherit;
   color: inherit;
+  unicode-bidi: plaintext;
+  text-align: start;
 }
 
 button {
@@ -1390,7 +1392,11 @@ li.msg:focus-visible .msg-stack {
 }
 
 .bubble-text {
+  display: block;
   white-space: pre-wrap;
+  /* Each line takes the direction of its first letter, so Persian/Arabic/Hebrew lines read right to left. */
+  unicode-bidi: plaintext;
+  text-align: start;
 }
 
 .bubble-text.muted {
